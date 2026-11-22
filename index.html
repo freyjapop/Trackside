@@ -144,6 +144,9 @@ legend{font-size:24px;padding:0 8px}
 .auth-art p{font-size:18px;max-width:420px;margin:0}
 .auth-card{padding:24px}
 .auth-card .libtabs{margin-bottom:16px}
+.gbtn{width:100%;min-height:48px;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;color:#1f1f1f;border:2px solid var(--edge);border-radius:var(--wob);font-family:var(--sans);font-size:16px;font-weight:600;text-decoration:none;padding:8px 18px}
+.gbtn:hover{background:#f7f7f7}
+.or{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--mute);font-size:13px}.or::before,.or::after{content:"";flex:1;border-top:1px dashed var(--line)}
 .authmsg{background:var(--blueSoft);padding:10px 14px;border-radius:12px;margin:0 0 14px;font-weight:500}
 .linkbtn{background:none;border:0;padding:6px 0;color:var(--ink);text-decoration:underline;text-underline-offset:3px;font-size:14px;min-height:36px}
 .signed-out .tabs,.signed-out .iconbtn{display:none}
@@ -452,6 +455,7 @@ function startSupabase() {
   const { data } = await sb.auth.getSession();
   if (QS.has('code')) history.replaceState(null, '', REDIRECT + location.hash);
   await onAuth(data.session);
+  if (!data.session && QS.get('signin') === 'google') { history.replaceState(null, '', REDIRECT + location.hash); signInGoogle(); }
  };
  s.onerror = () => { S.authReady = true; S.note = 'Offline'; S.authMsg = 'Couldn\'t reach the sign-in service. Check your connection and reload.'; render(); };
  document.head.appendChild(s);
@@ -470,7 +474,12 @@ function vAuth() {
  else if (tab === 'forgot') form = '<form data-form="forgot"><p class="mute" style="margin-top:0">Enter your email and we\'ll send a link to reset your password.</p>' + email + '<button class="btn primary" style="width:100%;justify-content:center">Send reset link</button></form>';
  else form = '<form data-form="signin">' + email + pwField('password', 'Password', 'current-password') + '<button class="btn primary" style="width:100%;justify-content:center">Sign in</button></form><div class="row" style="justify-content:space-between;margin-top:12px"><button class="linkbtn" data-act="authtab" data-id="forgot">Forgot password?</button><button class="linkbtn" data-act="authtab" data-id="link">Email me a sign-in link</button></div>';
  return '<section class="auth"><div class="auth-art"><span class="patch" role="img" aria-label="Trackside logo"><span class="shoe"></span></span><h1>Every ride, remembered.</h1><p>Sign in to keep your riding journal safe and in sync on all your devices.</p></div>' +
-  '<div class="card auth-card"><div class="libtabs" role="group" aria-label="Sign in or create an account"><button data-act="authtab" data-id="signin" aria-pressed="' + (tab === 'signin' || tab === 'forgot' || tab === 'link') + '">Sign in</button><button data-act="authtab" data-id="signup" aria-pressed="' + (tab === 'signup') + '">Create account</button></div>' + msg + form + '</div></section>';
+  '<div class="card auth-card"><button class="gbtn" data-act="google"><svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.2C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.6 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.9-6.2C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.2z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.2-8.5 2.2-6.2 0-11.5-4.1-13.4-9.7l-7.9 6.2C6.6 42.6 14.6 48 24 48z"/></svg><span>Continue with Google</span></button><div class="or"><span>or use your email</span></div><div class="libtabs" role="group" aria-label="Sign in or create an account"><button data-act="authtab" data-id="signin" aria-pressed="' + (tab === 'signin' || tab === 'forgot' || tab === 'link') + '">Sign in</button><button data-act="authtab" data-id="signup" aria-pressed="' + (tab === 'signup') + '">Create account</button></div>' + msg + form + '</div></section>';
+}
+async function signInGoogle() {
+ if (!sb) { S.authMsg = 'Still connecting — try again in a moment.'; render(); return; }
+ const { error } = await sb.auth.signInWithOAuth({provider:'google', options:{redirectTo:REDIRECT}});
+ if (error) { S.authMsg = 'Google sign-in isn\'t available right now. Use your email instead.'; render(); }
 }
 async function authSubmit(kind, g, raw) {
  const email = g('email'), password = raw('password');
@@ -742,7 +751,7 @@ function horseView(h) {
 function settingsView() {
  return '<form data-form="settings"><label class="f">Your first name<input name="name" value="' + esc(S.st.name) + '"></label><label class="f">Show jump heights in<select name="units"><option value="cm"' + (S.st.units === 'cm' ? ' selected' : '') + '>Centimetres</option><option value="ft"' + (S.st.units === 'ft' ? ' selected' : '') + '>Feet and inches</option></select></label><button class="btn primary">Save settings</button></form>' +
  
- (S.mode === 'supa' && S.user ? '<div class="sec"><h3>Account</h3><p>Signed in as <b>' + esc(S.user.email) + '</b></p><button class="btn" data-act="signout">Sign out</button></div>' : S.mode !== 'supa' ? '<div class="sec"><h3>Account</h3><p class="mute">Want to sign in with your email and keep your journal on every device? Use the Trackside web app.</p><a class="btn" href="' + WEB_APP + '" target="_blank" rel="noopener">Open the web app</a></div>' : '') +
+ (S.mode === 'supa' && S.user ? '<div class="sec"><h3>Account</h3><p>Signed in as <b>' + esc(S.user.email) + '</b></p><button class="btn" data-act="signout">Sign out</button></div>' : S.mode !== 'supa' ? '<div class="sec"><h3>Account</h3><p class="mute">Sign in with your Google account to keep your journal safe on every device.</p><a class="btn gbtn" style="width:auto" href="' + WEB_APP + '?signin=google" target="_blank" rel="noopener"><svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.2C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.6 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.9-6.2C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.2z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.2-8.5 2.2-6.2 0-11.5-4.1-13.4-9.7l-7.9 6.2C6.6 42.6 14.6 48 24 48z"/></svg><span>Sign in with Google</span></a></div>' : '') +
  '<div class="sec"><h3>Your data</h3><p class="mute">' + (S.mode === 'supa' ? 'Your journal is saved to your Trackside account and syncs across your devices.' : S.mode === 'db' ? 'Your journal is private to you and syncs across your devices.' : 'Your journal is saved in this browser only.') + '</p><div class="row"><button class="btn" data-act="export">Export entries (CSV)</button><button class="btn" data-act="sample">Add sample journal</button><button class="btn danger" data-act="wipe">Erase everything</button></div><div id="wipebox"></div></div>';
 }
 
@@ -796,6 +805,7 @@ document.addEventListener('click', async e => {
  const b = e.target.closest('[data-act]'); if (!b || b.tagName === 'INPUT') return;
  const a = b.dataset.act, id = b.dataset.id;
  if (a === 'close') closeSheet();
+ else if (a === 'google') signInGoogle();
  else if (a === 'authtab') { S.authTab = id; S.authMsg = ''; render(); const f = document.querySelector('.auth-card input'); if (f) f.focus(); }
  else if (a === 'signout') { closeSheet(); if (sb) await sb.auth.signOut(); S.authTab = 'signin'; S.authMsg = ''; }
  else if (a === 'new') openSheet('Log a ride', entryForm());
