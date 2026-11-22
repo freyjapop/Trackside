@@ -10,7 +10,9 @@ An online riding journal for horse riders. Log lessons and the horses you ride, 
 - **Horses**: profiles, rider notes, ride history and a care log with due dates.
 - **Progress**: dressage and jumping charts, ride and confidence trend, goals, and flatwork and jumping skills checklists.
 - **Library**: breeds, colours and markings, terminology, tack and equipment, horse care and riding tips.
-- **Premium** (currently a demo switch): detailed feedback (fault patterns, weakest movements, matched tips) and the full library.
+- **Detailed feedback**: fault patterns, weakest dressage movements and tips matched to your reflections.
+
+Everything is free for now; Premium is paused.
 
 ## Running it
 
@@ -51,4 +53,4 @@ The schema lives in `supabase/migrations/` and is already applied to the project
 
 **Privacy:** every table has row level security. A rider can only read and change their own rows, and signed-out visitors can't read anything.
 
-**Premium:** riders can't change `profiles.is_premium` themselves. Set it from the dashboard or a server-side payment webhook (service role), with an optional `premium_until` date. Non-Premium riders get the 12 free articles in full and only the titles of the rest (via `library_index()`).
+**Premium (paused):** everything is free right now and every library article is readable by all signed-in riders. The groundwork for paid Premium is kept for later: `profiles.is_premium`, `premium_until` and the Stripe fields (riders can't change them), `is_premium()`, and three Stripe edge functions in `supabase/functions/` (`create-checkout`, `customer-portal`, `stripe-webhook`). They're deployed but do nothing until `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are set.

@@ -98,8 +98,6 @@ main{max-width:1080px;margin:auto;padding:36px max(4vw,16px) 120px}
 .legend{display:flex;gap:14px;font-size:13px;color:var(--mute);flex-wrap:wrap}
 .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
 .empty{border:2px dashed var(--edge);border-radius:var(--wob);padding:24px;text-align:center;color:var(--mute);font-family:var(--hand);font-size:20px}
-.lock{position:relative;overflow:hidden}
-.lock .veil{position:absolute;inset:0;background:color-mix(in srgb,var(--panel) 82%,transparent);backdrop-filter:blur(3px);display:grid;place-items:center;text-align:center;padding:16px}
 .pill{font-family:var(--hand);font-size:16px;padding:0 10px;background:var(--tape3);color:var(--ink);transform:rotate(-2deg);display:inline-block}
 .sk{min-height:38px;padding:4px 30px 4px 12px;border-radius:999px;border:2px solid var(--edge);background:var(--panel);font-family:var(--hand);font-size:17px}.sk2{background:var(--blueSoft)}.sk3{background:var(--blue);color:var(--onblue);border-color:var(--blue)}
 .skill{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-top:1px dashed var(--line);flex-wrap:wrap}
@@ -109,7 +107,6 @@ main{max-width:1080px;margin:auto;padding:36px max(4vw,16px) 120px}
 .art-card h3{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .art-card .meta{font-size:13px;color:var(--mute);margin-top:4px;font-weight:600}
 .art-card .body{margin-top:8px;font-size:15px}
-.locked .body{filter:blur(4px);user-select:none;pointer-events:none;max-height:4.7em;overflow:hidden}
 label.f{display:block;font-weight:600;font-size:14px;margin-bottom:12px}
 label.f>input,label.f>select,label.f>textarea,.inp{display:block;width:100%;margin-top:5px;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:var(--soft);font-size:16px;min-height:46px;font-family:var(--sans)}
 label.f>input:focus,label.f>textarea:focus,.inp:focus{border-color:var(--edge);outline:none}
@@ -298,7 +295,7 @@ const LIB = [
   {id:'transitions', t:'Smoother transitions', m:'Flatwork', b:'Prepare with a half-halt two or three strides before, keep your leg on through downward transitions, and ride each transition at a marker so you can measure accuracy.'}
  ]}
 ];
-LIB.forEach(s => s.items.forEach((it, i) => { it.id = it.id || s.id + '-' + i; it.sec = s.id; it.free = i < 2; }));
+LIB.forEach(s => s.items.forEach((it, i) => { it.id = it.id || s.id + '-' + i; it.sec = s.id; it.free = true; }));
 const TIPKEYS = [
  [/stirrup|lower leg|heel/i,'lower-leg'],[/ahead|lean|tip(ped)? forward|threw|throw/i,'position'],[/rush|fast|speed|quick|rhythm/i,'rhythm'],
  [/stride|distance|spot/i,'stride'],[/lead/i,'lead'],[/refus|stop(ped)? at|run.?out/i,'refusals'],[/nerv|scared|confiden|anxious|fear/i,'confidence'],
@@ -307,7 +304,7 @@ const tipFor = id => LIB.find(s => s.id === 'tips').items.find(t => t.id === id)
 const tipsFromText = txt => [...new Set(TIPKEYS.filter(([re]) => re.test(txt)).map(([, id]) => id))].map(tipFor);
 
 /* ---------- state + storage ---------- */
-const DEF = {name:'', units:'cm', premium:false, skills:{}, bookmarks:[]};
+const DEF = {name:'', units:'cm', skills:{}, bookmarks:[]};
 const S = {entries:[], horses:[], goals:[], st:{...DEF}, mode:'connecting', note:'', route:'home', fHorse:'', fDisc:'', libSec:'breeds', libQ:'', pHorse:''};
 const LS = 'trackside-v1';
 let db = null, stateRef = null, cols = {}, readOnly = false;
@@ -373,7 +370,6 @@ function openSheet(title, html) {
  setTimeout(() => { const f = $('#sheet-body input:not([type=hidden]),#sheet-body select,#sheet-body textarea'); if (f && matchMedia('(min-width:720px)').matches) f.focus(); }, 30);
 }
 function closeSheet() { $('#sheet').hidden = true; document.body.style.overflow = ''; }
-const lockVeil = what => '<div class="veil"><div><span class="pill">Premium</span><p style="margin:10px 0 12px;font-weight:600">' + esc(what) + '</p><button class="btn primary sm" data-act="premium">See Premium</button></div></div>';
 function rosette() {
  return '<span class="tag">Trackside</span><span class="patch" role="img" aria-label="Trackside logo"><span class="shoe"></span></span>';
 }
@@ -475,7 +471,7 @@ function vProgress() {
   '<div class="sec grid g2"><div class="card"><h2>Dressage</h2><p class="mute" style="font-size:14px">Test percentage over time · hollow dots are practice tests</p><div class="fig" id="ch-dress"></div></div>' +
   '<div class="card"><h2>Jumping</h2><p class="mute" style="font-size:14px">Highest fence per ride · hollow dots had faults</p><div class="fig" id="ch-jump"></div></div></div>' +
   '<div class="sec card"><h2>Ride and confidence</h2><div class="legend" style="margin:6px 0"><span><i style="background:var(--blue)"></i>Ride rating</span><span><i style="background:var(--gold)"></i>Confidence</span></div><div class="fig" id="ch-conf" style="min-height:200px"></div></div>' +
-  '<div class="sec"><h2>Detailed feedback</h2><div class="card' + (S.st.premium ? '' : ' lock') + '" style="min-height:220px">' + (S.st.premium ? patterns() : '<div aria-hidden="true">' + patterns() + '</div>' + lockVeil('Patterns in your faults, weakest dressage movements and tips matched to your reflections.')) + '</div></div>' +
+  '<div class="sec"><h2>Detailed feedback</h2><div class="card">' + patterns() + '</div></div>' +
   '<div class="sec"><div class="row between" style="margin-bottom:12px"><h2>Goals</h2><button class="btn sm" data-act="newgoal">Add a goal</button></div>' +
   (goals.length ? '<div class="card">' + goals.map(g => '<div class="focusline"><label class="row" style="gap:10px;cursor:pointer"><input type="checkbox" data-act="goal" data-id="' + g.id + '"' + (g.done ? ' checked' : '') + ' style="width:22px;height:22px"><span style="' + (g.done ? 'text-decoration:line-through;color:var(--mute)' : '') + '">' + esc(g.text) + '</span></label><span class="row" style="gap:6px">' + (g.disc ? '<span class="chip">' + esc(g.disc) + '</span>' : '') + (g.date ? '<span class="chip' + (!g.done && g.date < today() ? ' red' : '') + '">By ' + fmtShort(g.date) + '</span>' : '') + '<button class="btn sm ghost" data-act="delgoal" data-id="' + g.id + '" aria-label="Delete goal">✕</button></span></div>').join('') + '</div>' : '<div class="empty">Set a goal like "Jump a 90 cm course clear by June".</div>') + '</div>' +
   '<div class="sec grid g2">' + groups + '</div>';
@@ -490,9 +486,9 @@ function drawProgress() {
  const rp = es.filter(e => e.ride).map(e => ({x:e.date, y:e.ride})), cp = es.filter(e => e.conf).map(e => ({x:e.date, y:e.conf}));
  if (el3) rp.length + cp.length ? chart(el3, [{color:'var(--blue)', pts:rp}, {color:'var(--gold)', pts:cp}], {min:1, max:5, fmt:v => Math.round(v * 10) / 10, label:'Ride rating and confidence over time'}) : el3.innerHTML = '<div class="empty" style="position:absolute;inset:0;display:grid;place-items:center">Rate your rides to see this trend.</div>';
 }
-function artCard(it, open) {
- const locked = !it.free && !S.st.premium, bm = (S.st.bookmarks || []).includes(it.id);
- return '<article class="card art-card' + (locked ? ' locked' : '') + '"><h3><span>' + esc(it.t) + '</span>' + (locked ? '<span class="pill">Premium</span>' : '<button class="btn sm ghost" data-act="bm" data-id="' + it.id + '" aria-pressed="' + bm + '" aria-label="' + (bm ? 'Remove bookmark' : 'Bookmark') + '">' + (bm ? '★' : '☆') + '</button>') + '</h3><div class="meta">' + esc(it.m) + '</div><div class="body">' + esc(it.b) + '</div>' + (locked ? '<button class="btn sm" data-act="premium" style="margin-top:10px">Read with Premium</button>' : '') + '</article>';
+function artCard(it) {
+ const bm = (S.st.bookmarks || []).includes(it.id);
+ return '<article class="card art-card"><h3><span>' + esc(it.t) + '</span><button class="btn sm ghost" data-act="bm" data-id="' + it.id + '" aria-pressed="' + bm + '" aria-label="' + (bm ? 'Remove bookmark' : 'Bookmark') + '">' + (bm ? '★' : '☆') + '</button></h3><div class="meta">' + esc(it.m) + '</div><div class="body">' + esc(it.b) + '</div></article>';
 }
 function libResults() {
  const q = S.libQ.trim().toLowerCase();
@@ -504,11 +500,11 @@ function libResults() {
  return note + (items.length ? '<div class="grid g2">' + items.map(i => artCard(i)).join('') + '</div>' : '<div class="empty">' + (q ? 'Nothing matches "' + esc(S.libQ) + '".' : 'No saved articles yet — tap ☆ on any article.') + '</div>');
 }
 function vLibrary() {
- return '<div class="row between"><h1>Equestrian library</h1>' + (S.st.premium ? '<span class="chip gold">Premium</span>' : '<button class="btn sm" data-act="premium">Unlock all articles</button>') + '</div>' +
+ return '<div class="row between"><h1>Equestrian library</h1></div>' +
   '<input class="inp" type="search" id="libq" placeholder="Search breeds, colours, terms, tack, care…" value="' + esc(S.libQ) + '" style="margin:16px 0 12px" aria-label="Search the library">' +
   '<div class="libtabs" role="group" aria-label="Library sections">' + LIB.map(s => '<button data-act="libsec" data-id="' + s.id + '" aria-pressed="' + (S.libSec === s.id && !S.libQ) + '">' + s.name + '</button>').join('') + '<button data-act="libsec" data-id="saved" aria-pressed="' + (S.libSec === 'saved' && !S.libQ) + '">Saved</button></div>' +
   '<div id="libres" style="margin-top:14px">' + libResults() + '</div>' +
-  '<p class="foot">Draft library content, to be reviewed by a qualified instructor before launch. Free accounts can read the first two articles in each section.</p>';
+  '<p class="foot">Draft library content, to be reviewed by a qualified instructor before launch.</p>';
 }
 function render() {
  ros.forEach(r => r.disconnect()); ros = [];
@@ -576,7 +572,7 @@ function entryView(e) {
  (d ? '<div class="card" style="margin-top:16px"><h3>Dressage' + (d.practice ? ' · practice' : '') + '</h3><dl class="kv" style="margin-top:8px">' + [['Test', d.test], ['Level', d.level], ['Event', d.event], ['Judge', d.judge], ['Score', pct(d) != null ? pct(d) + '%' : ''], ['Placing', d.place]].filter(x => x[1] != null && x[1] !== '').map(x => '<dt>' + x[0] + '</dt><dd>' + esc(x[1]) + '</dd>').join('') + '</dl>' +
   ((d.marks || []).length ? '<div class="bars" style="margin-top:10px">' + d.marks.filter(m => m.mark != null).map(m => '<div class="b"><span title="' + esc(m.comment || '') + '">' + esc(m.name || 'Movement') + '</span><span class="t"><i style="width:' + m.mark * 10 + '%"></i></span><span class="n">' + m.mark + (m.coef > 1 ? '×' + m.coef : '') + '</span></div>').join('') + '</div>' : '') + (d.comment ? '<p class="mute">' + esc(d.comment) + '</p>' : '') + '</div>' : '') +
  (j ? '<div class="card" style="margin-top:16px"><h3>Jumping' + (j.practice ? ' · practice' : '') + '</h3><dl class="kv" style="margin-top:8px">' + [['Class', j.cls], ['Event', j.event], ['Height', fmtH(j.height)], ['Result', j.clear ? 'Clear round' : (+j.jf || 0) + ' jumping + ' + (+j.tf || 0) + ' time faults'], ['Time', j.time != null ? j.time + ' s' : ''], ['Placing', j.place], ['Fault causes', (j.causes || []).join(', ')]].filter(x => x[1] != null && x[1] !== '').map(x => '<dt>' + x[0] + '</dt><dd>' + esc(x[1]) + '</dd>').join('') + '</dl></div>' : '') +
- (tips.length ? '<div class="card' + (S.st.premium ? '' : ' lock') + '" style="margin-top:16px;min-height:150px"><h3>Tips for this ride</h3>' + tips.slice(0, 2).map(t => '<p><b>' + esc(t.t) + '.</b> ' + esc(t.b) + '</p>').join('') + (S.st.premium ? '' : lockVeil('Tips matched to what you wrote')) + '</div>' : '') +
+ (tips.length ? '<div class="card" style="margin-top:16px"><h3>Tips for this ride</h3>' + tips.slice(0, 2).map(t => '<p><b>' + esc(t.t) + '.</b> ' + esc(t.b) + '</p>').join('') + '</div>' : '') +
  '<div class="row" style="margin-top:20px"><button class="btn primary" data-act="edit" data-id="' + e.id + '">' + (e.status === 'quick' ? 'Finish entry' : 'Edit') + '</button><button class="btn danger" data-act="delentry" data-id="' + e.id + '">Delete</button></div>';
 }
 function horseView(h) {
@@ -593,15 +589,8 @@ function horseView(h) {
 }
 function settingsView() {
  return '<form data-form="settings"><label class="f">Your first name<input name="name" value="' + esc(S.st.name) + '"></label><label class="f">Show jump heights in<select name="units"><option value="cm"' + (S.st.units === 'cm' ? ' selected' : '') + '>Centimetres</option><option value="ft"' + (S.st.units === 'ft' ? ' selected' : '') + '>Feet and inches</option></select></label><button class="btn primary">Save settings</button></form>' +
- '<div class="sec"><h3>Plan</h3><p>' + (S.st.premium ? 'You\'re on <b>Premium</b> (demo).' : 'You\'re on the <b>Free</b> plan.') + '</p><button class="btn" data-act="premium">' + (S.st.premium ? 'Manage Premium' : 'See Premium') + '</button></div>' +
+ 
  '<div class="sec"><h3>Your data</h3><p class="mute">' + (S.mode === 'db' ? 'Your journal is private to you and syncs across your devices.' : 'Your journal is saved in this browser only.') + '</p><div class="row"><button class="btn" data-act="export">Export entries (CSV)</button><button class="btn" data-act="sample">Add sample journal</button><button class="btn danger" data-act="wipe">Erase everything</button></div><div id="wipebox"></div></div>';
-}
-function premiumView() {
- const rows = [['Lesson log, quick log, horses', '✓', '✓'], ['Dressage and jumping scores', '✓', '✓'], ['Progress charts, skills, goals', '✓', '✓'], ['Reflection and focus points', '✓', '✓'], ['Care log and reminders', '✓', '✓'], ['Tips matched to your reflections', '—', '✓'], ['Fault and movement pattern analysis', '—', '✓'], ['Full equestrian library', 'Preview', '✓']];
- return '<p>The journal is free. Premium adds detailed feedback and the full library of breeds, colours, terminology, tack, horse care and riding tips.</p>' +
- '<table style="width:100%;border-collapse:collapse;margin:14px 0;font-size:15px"><thead><tr><th style="text-align:left;padding:8px 0">Feature</th><th>Free</th><th>Premium</th></tr></thead><tbody>' + rows.map(r => '<tr style="border-top:1px solid var(--line)"><td style="padding:8px 0">' + r[0] + '</td><td style="text-align:center">' + r[1] + '</td><td style="text-align:center;color:var(--blue);font-weight:700">' + r[2] + '</td></tr>').join('') + '</tbody></table>' +
- '<p class="mute" style="font-size:14px">Prototype: payments aren\'t connected yet, so this switch unlocks Premium for testing. Your entries stay yours whichever plan you\'re on.</p>' +
- '<button class="btn primary" data-act="togglepremium">' + (S.st.premium ? 'Switch back to Free' : 'Try Premium (demo)') + '</button>';
 }
 
 /* ---------- sample data ---------- */
@@ -671,8 +660,6 @@ document.addEventListener('click', async e => {
  else if (a === 'delgoal') del('goals', id);
  else if (a === 'libsec') { S.libSec = id; S.libQ = ''; render(); }
  else if (a === 'bm') { const bm = new Set(S.st.bookmarks || []); bm.has(id) ? bm.delete(id) : bm.add(id); setSt({bookmarks:[...bm]}); }
- else if (a === 'premium') openSheet('Trackside Premium', premiumView());
- else if (a === 'togglepremium') { setSt({premium:!S.st.premium}); closeSheet(); toast(S.st.premium ? 'Premium unlocked (demo).' : 'Back on the Free plan.'); }
  else if (a === 'settings') openSheet('Settings', settingsView());
  else if (a === 'sample') { closeSheet(); await loadSample(); }
  else if (a === 'export') {
