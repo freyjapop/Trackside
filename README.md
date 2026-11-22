@@ -16,9 +16,17 @@ Everything is free for now; Premium is paused.
 
 ## Running it
 
-Trackside is a single self-contained page: open `index.html` in a browser. Fonts load from Google Fonts.
+Trackside is a single self-contained page, `index.html`. How it saves depends on where it runs:
 
-When it runs as a Claude artifact, each rider's journal is saved privately and syncs across devices. Opened anywhere else, it saves to the browser's local storage on that device.
+- **Web app (GitHub Pages, `localhost`)**: riders sign in with email (password or a magic link) and their journal is saved to Supabase, so it syncs across devices. Add `?backend=supabase` to the URL to use this anywhere else.
+- **Claude artifact**: no sign-in; each viewer's journal is saved privately in Claude.
+- **Anywhere else** (or with `?backend=local`): saved in the browser on that device.
+
+### Publishing the web app
+
+1. On GitHub: **Settings → Pages → Build and deployment**, choose **Deploy from a branch**, branch `main`, folder `/ (root)`, then Save. The app appears at `https://freyjapop.github.io/Trackside/`.
+2. In Supabase: **Authentication → URL Configuration**, set **Site URL** to `https://freyjapop.github.io/Trackside/` and add the same address under **Redirect URLs**. Sign-up confirmation, magic-link and password-reset emails send riders back there.
+3. Optional, before launch: Supabase's built-in email sender only allows a few emails an hour. Add your own email service under **Authentication → Emails → SMTP settings**.
 
 ## Brand
 
