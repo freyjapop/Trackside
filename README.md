@@ -28,4 +28,4 @@ When it runs as a Claude artifact, each rider's journal is saved privately and s
 
 - `index.html`: the app
 - `assets/trackside-shoes.png`: logo artwork (transparent PNG, also embedded in the app)
-- `assets/trackside-horse.png`: galloping horse used for the Horses tab icon
+- `assets/horse-icon.svg`: rearing horse used for the Horses tab icon
